@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/roupa.dart';
 import 'cadastro_screen.dart';
-// import 'inventario_screen.dart'; // Descomente quando criar este arquivo
+import 'inventario_screen.dart'; // Descomente quando criar este arquivo
 
 class HomeGuardaRoupa extends StatefulWidget {
   @override
@@ -88,7 +88,12 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
         children: [
           FloatingActionButton(
             onPressed: () {
-              // Navegação para Inventário virá aqui
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TelaInventario(roupas: listaDeRoupas),
+                ),
+              );
             },
             backgroundColor: Colors.orange,
             child: Icon(Icons.inventory),
