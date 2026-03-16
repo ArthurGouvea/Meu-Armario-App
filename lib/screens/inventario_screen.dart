@@ -1,40 +1,82 @@
 import 'package:flutter/material.dart';
 import '../models/roupa.dart';
-import '../widgets/card_roupa.dart'; // Vamos usar o widget que você criou
+import '../widgets/card_roupa.dart';
+import 'cadastro_screen.dart';
 
-class TelaInventario extends StatelessWidget {
+class TelaInventario extends StatefulWidget {
   final List<Roupa> roupas;
-
-  // Construtor que recebe a lista
   TelaInventario({required this.roupas});
 
+  @override
+  State<TelaInventario> createState() => _TelaInventarioState();
+}
+
+class _TelaInventarioState extends State<TelaInventario> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Meu Inventário"),
+        title: const Text("Meu Inventário"),
         backgroundColor: Colors.orange,
       ),
-      body: roupas.isEmpty
-          ? Center(
-        child: Text(
-          "Nenhum item no armário ainda!",
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
-      )
+      body: widget.roupas.isEmpty
+          ? const Center(child: Text("Nenhum item no armário!"))
           : GridView.builder(
-        padding: EdgeInsets.all(15),
-        // Aqui definimos as colunas
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,      // 2 colunas
-          crossAxisSpacing: 10,   // Espaço horizontal entre cards
-          mainAxisSpacing: 10,    // Espaço vertical entre cards
-          childAspectRatio: 0.8,  // Proporção (altura x largura)
+        padding: const EdgeInsets.all(15),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.8,
         ),
-        itemCount: roupas.length,
+        itemCount: widget.roupas.length,
         itemBuilder: (context, index) {
-          // Usando o seu widget customizado para cada item da grade
-          return CardRoupa(roupa: roupas[index]);
+          return CardRoupa(
+            roupa: widget.roupas[index],
+            onTap: () async {
+              // EDITA E ATUALIZA NA HORA
+              final Roupa? editada = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TelaCadastro(roupaParaEditar: widget.roupas[index]),
+                ),
+              );
+
+              if (editada != null) {
+                setState(() {
+                  widget.roupas[index] = editada;
+                });
+              }
+            },
+            onLongPress: () {
+              // DIALOG DE EXCLUSÃO
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Excluir Peça"),
+                  content: Text("Deseja remover ${widget.roupas[index].nome}?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancelar"),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          widget.roupas.removeAt(index);
+                        });
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Item removido!")),
+                        );
+                      },
+                      child: const Text("Excluir", style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
         },
       ),
     );

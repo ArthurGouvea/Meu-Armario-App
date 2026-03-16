@@ -2,14 +2,32 @@ import 'package:flutter/material.dart';
 import '../models/roupa.dart'; // Importante para reconhecer a classe Roupa
 
 class TelaCadastro extends StatefulWidget {
+  final Roupa? roupaParaEditar; // Pode ser nulo se for um cadastro novo
+
+  TelaCadastro({this.roupaParaEditar}); // Construtor opcional
+
   @override
   _TelaCadastroState createState() => _TelaCadastroState();
 }
 
 class _TelaCadastroState extends State<TelaCadastro> {
-  final TextEditingController _controleNome = TextEditingController();
-  final TextEditingController _controleObs = TextEditingController();
+  late TextEditingController _controleNome;
+  late TextEditingController _controleObs;
 
+  @override
+  void initState() {
+    super.initState();
+    // Se estiver editando, já começa com o texto da roupa antiga
+    _controleNome = TextEditingController(text: widget.roupaParaEditar?.nome ?? "");
+    _controleObs = TextEditingController(text: widget.roupaParaEditar?.obs ?? "");
+  }
+
+  @override
+  void dispose() {
+    _controleNome.dispose();
+    _controleObs.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
