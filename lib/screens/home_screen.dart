@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/roupa.dart';
+import '../services/storage_service.dart';
 import 'cadastro_screen.dart';
 import 'inventario_screen.dart'; // Descomente quando criar este arquivo
 
@@ -9,7 +10,26 @@ class HomeGuardaRoupa extends StatefulWidget {
 }
 
 class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
+  // 1. A variável deve estar limpa
   List<Roupa> listaDeRoupas = [];
+
+// 2. O initState chama o carregamento
+  @override
+  void initState() {
+    super.initState();
+    _carregarDadosIniciais();
+  }
+
+// 3. A função de carregar (Coloque esses prints para vermos no Chrome)
+  void _carregarDadosIniciais() async {
+    print("🟡 Tentando carregar...");
+    final salvas = await StorageService.carregarRoupas();
+    print("🟢 Itens recuperados: ${salvas.length}");
+
+    setState(() {
+      listaDeRoupas = salvas;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +105,7 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
                                 setState(() {
                                   listaDeRoupas.removeAt(index);
                                 });
+                                StorageService.salvarRoupas(listaDeRoupas); // Salva após excluir
                                 // Um aviso rápido no rodapé
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -132,16 +153,21 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
           children: [
             // --- BOTÃO LARANJA (INVENTÁRIO) ---
             FloatingActionButton(
+              heroTag: "btn_inventario",
               onPressed: () async {
-                // O 'await' faz o código esperar você fechar a tela de inventário
+                // 1. Abre o inventário e ESPERA (await) você voltar
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => TelaInventario(roupas: listaDeRoupas),
                   ),
                 );
-                // Quando você volta do inventário, o setState avisa a Home para se atualizar
+
+                // 2. Quando você volta, atualiza a tela para mostrar o que mudou
                 setState(() {});
+
+                // 3. Salva no celular para garantir que edições/exclusões feitas lá fiquem guardadas
+                StorageService.salvarRoupas(listaDeRoupas);
               },
               backgroundColor: Colors.orange,
               child: const Icon(Icons.inventory),
@@ -151,6 +177,7 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
 
             // --- BOTÃO VERDE (ADICIONAR) ---
             FloatingActionButton(
+              heroTag: "btn_adicionar",
               onPressed: () async {
                 final Roupa? resultado = await Navigator.push(
                   context,
@@ -161,6 +188,7 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
                   setState(() {
                     listaDeRoupas.insert(0, resultado);
                   });
+                  StorageService.salvarRoupas(listaDeRoupas); // Salva a nova lista
                 }
               },
               backgroundColor: Colors.green,
