@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/roupa.dart';
+import '../services/storage_service.dart';
 import '../widgets/card_roupa.dart';
 import 'cadastro_screen.dart';
 
@@ -27,7 +28,7 @@ class _TelaInventarioState extends State<TelaInventario> {
           crossAxisCount: 2,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          childAspectRatio: 0.8,
+          childAspectRatio: 0.7,
         ),
         itemCount: widget.roupas.length,
         itemBuilder: (context, index) {
@@ -42,12 +43,15 @@ class _TelaInventarioState extends State<TelaInventario> {
                 ),
               );
 
+
               if (editada != null) {
                 setState(() {
                   widget.roupas[index] = editada;
                 });
+                await StorageService.salvarRoupas(widget.roupas);
               }
             },
+
             onLongPress: () {
               // DIALOG DE EXCLUSÃO
               showDialog(
@@ -61,10 +65,12 @@ class _TelaInventarioState extends State<TelaInventario> {
                       child: const Text("Cancelar"),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
                         setState(() {
                           widget.roupas.removeAt(index);
                         });
+                        await StorageService.salvarRoupas(widget.roupas);
+
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Item removido!")),

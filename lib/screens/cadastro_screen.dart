@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/roupa.dart'; // Importante para reconhecer a classe Roupa
 
 class TelaCadastro extends StatefulWidget {
@@ -11,15 +14,39 @@ class TelaCadastro extends StatefulWidget {
 }
 
 class _TelaCadastroState extends State<TelaCadastro> {
-  late TextEditingController _controleNome;
-  late TextEditingController _controleObs;
+  final TextEditingController _controleNome = TextEditingController();
+  final TextEditingController _controleObs = TextEditingController();
+
+  final ImagePicker _picker = ImagePicker();
+  XFile? _imagemSelecionada; // Isso guarda o arquivo temporário da foto
+
+  Future<void> _tirarFoto() async {
+    final XFile? foto = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85, // Mantenha a qualidade boa
+    );
+    if (foto != null) {
+      setState(() {
+        _imagemSelecionada = foto;
+      });
+    }
+  }
+
+
 
   @override
   void initState() {
     super.initState();
-    // Se estiver editando, já começa com o texto da roupa antiga
-    _controleNome = TextEditingController(text: widget.roupaParaEditar?.nome ?? "");
-    _controleObs = TextEditingController(text: widget.roupaParaEditar?.obs ?? "");
+
+    if (widget.roupaParaEditar != null) {
+      _controleNome.text = widget.roupaParaEditar!.nome;
+      _controleObs.text = widget.roupaParaEditar!.obs;
+
+      if (widget.roupaParaEditar!.imagemPath != null) {
+        _imagemSelecionada = XFile(widget.roupaParaEditar!.imagemPath!);
+      }
+    }
+
   }
 
   @override
@@ -31,33 +58,62 @@ class _TelaCadastroState extends State<TelaCadastro> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Cadastrar Roupa"), backgroundColor: Colors.green),
-      body: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controleNome,
-              decoration: InputDecoration(labelText: "Nome da peça"),
+      appBar: AppBar(title: const Text("Cadastrar Roupa")),
+      body: SingleChildScrollView( // <--- ADICIONE ISSO AQUI
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+
+              GestureDetector(
+                onTap: _tirarFoto,
+                child: Container(
+                  width: double.infinity,
+                  height: 400, // Altura maior para combinar com fotos em pé
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300], // Só aparece se não tiver foto
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: _imagemSelecionada != null
+                      ? ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.file(
+                      File(_imagemSelecionada!.path),
+                      fit: BoxFit.cover, // <--- MUDE PARA COVER
+                      alignment: Alignment.center, // Centraliza a foto
+                    ),
+                  )
+                      : const Icon(Icons.camera_alt, size: 50),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              TextField(
+                controller: _controleNome,
+                decoration: InputDecoration(labelText: "Nome da peça"),
+              ),
+              TextField(
+                controller: _controleObs,
+                decoration: InputDecoration(labelText: "Observações"),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  final novaRoupa = Roupa(
+                    nome: _controleNome.text,
+                    obs: _controleObs.text,
+                    imagemPath: _imagemSelecionada
+                        ?.path, // <--- Aqui passamos a foto!
+                  );
+                  Navigator.pop(context, novaRoupa);
+                },
+                child: Text("Salvar"),
+                )
+              ],
             ),
-            TextField(
-              controller: _controleObs,
-              decoration: InputDecoration(labelText: "Observações"),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Roupa novaRoupa = Roupa(
-                  nome: _controleNome.text,
-                  obs: _controleObs.text,
-                );
-                Navigator.pop(context, novaRoupa);
-              },
-              child: Text("Salvar"),
-            )
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+
   }
-}

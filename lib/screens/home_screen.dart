@@ -186,9 +186,11 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
 
                 if (resultado != null) {
                   setState(() {
-                    listaDeRoupas.insert(0, resultado);
+                    listaDeRoupas.insert(0, resultado); // Adiciona no topo da lista
                   });
-                  StorageService.salvarRoupas(listaDeRoupas); // Salva a nova lista
+                  // SALVA NO DISCO PARA NÃO SUMIR NO REBOOT
+                  await StorageService.salvarRoupas(listaDeRoupas);
+                  print("DEBUG: Salvei a roupa com o caminho: ${resultado.imagemPath}");
                 }
               },
               backgroundColor: Colors.green,
