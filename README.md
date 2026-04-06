@@ -13,7 +13,7 @@ Aplicativo para gerenciamento e catálogo de guarda-roupa pessoal, desenvolvido 
 ## ✅ Em desenvolvimento:
 * **Fotos:** Adicionar a opção de colocar foto da peça de roupa.
 * **Classificação:** Poder classificar as roupas (Camisas,Casacos,Calças,etc).
-* **Filtro:** A partir das Classificações, filtrar a pagida de inventário para mostrar apenas as peças desejadas.
+* **Filtro:** A partir das Classificações, filtrar a página de inventário para mostrar apenas as peças desejadas.
 
 
 ## 🛠️ Tecnologias
