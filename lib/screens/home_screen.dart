@@ -91,25 +91,27 @@ class _HomeGuardaRoupaState extends State<HomeGuardaRoupa> {
                             final roupa = listaDeRoupas[index];
 
                             return Dismissible(
-                              key: Key(roupa.nome + index.toString()),
-                              // Chave única para o Flutter não se perder
+                              // Use APENAS o id único. Não use o index!
+                              key: Key(roupa.id),
+
                               direction: DismissDirection.endToStart,
-                              // Só permite arrastar da direita para a esquerda
                               background: Container(
                                 color: Colors.red,
                                 alignment: Alignment.centerRight,
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: Icon(Icons.delete, color: Colors.white),
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: const Icon(Icons.delete, color: Colors.white),
                               ),
                               onDismissed: (direction) {
+                                // É vital que o item seja removido da lista dentro do setState
+                                // exatamente como você fez aqui:
                                 setState(() {
                                   listaDeRoupas.removeAt(index);
                                 });
-                                StorageService.salvarRoupas(listaDeRoupas); // Salva após excluir
-                                // Um aviso rápido no rodapé
+
+                                StorageService.salvarRoupas(listaDeRoupas);
+
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text("${roupa.nome} removida")),
+                                  SnackBar(content: Text("${roupa.nome} removida")),
                                 );
                               },
                               child: ListTile(

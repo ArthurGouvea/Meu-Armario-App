@@ -1,29 +1,57 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../models/roupa.dart'; // Importante para reconhecer a classe Roupa
+import '../models/roupa.dart';
+import '../models/tag.dart'; // Ajustado para o nome que criamos
+import '../services/storage_service.dart';
 
 class TelaCadastro extends StatefulWidget {
-  final Roupa? roupaParaEditar; // Pode ser nulo se for um cadastro novo
+  final Roupa? roupaParaEditar;
 
-  TelaCadastro({this.roupaParaEditar}); // Construtor opcional
+  TelaCadastro({this.roupaParaEditar});
 
   @override
   _TelaCadastroState createState() => _TelaCadastroState();
 }
 
 class _TelaCadastroState extends State<TelaCadastro> {
+  List<Tag> _tagsDisponiveis = [];
+  List<String> _tagsSelecionadasIds = [];
+
   final TextEditingController _controleNome = TextEditingController();
   final TextEditingController _controleObs = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
-  XFile? _imagemSelecionada; // Isso guarda o arquivo temporário da foto
+  XFile? _imagemSelecionada;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarTagsDoStorage();
+
+    // Se estiver editando, preenchemos os campos com os dados existentes
+    if (widget.roupaParaEditar != null) {
+      _controleNome.text = widget.roupaParaEditar!.nome;
+      _controleObs.text = widget.roupaParaEditar!.obs;
+      _tagsSelecionadasIds = List.from(widget.roupaParaEditar!.tagIds);
+
+      if (widget.roupaParaEditar!.imagemPath != null) {
+        _imagemSelecionada = XFile(widget.roupaParaEditar!.imagemPath!);
+      }
+    }
+  }
+
+  void _carregarTagsDoStorage() async {
+    final tags = await StorageService().carregarTags();
+    setState(() {
+      _tagsDisponiveis = tags;
+    });
+  }
 
   Future<void> _tirarFoto() async {
     final XFile? foto = await _picker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 85, // Mantenha a qualidade boa
+      imageQuality: 85,
     );
     if (foto != null) {
       setState(() {
@@ -32,46 +60,34 @@ class _TelaCadastroState extends State<TelaCadastro> {
     }
   }
 
-
-
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.roupaParaEditar != null) {
-      _controleNome.text = widget.roupaParaEditar!.nome;
-      _controleObs.text = widget.roupaParaEditar!.obs;
-
-      if (widget.roupaParaEditar!.imagemPath != null) {
-        _imagemSelecionada = XFile(widget.roupaParaEditar!.imagemPath!);
-      }
-    }
-
-  }
-
   @override
   void dispose() {
     _controleNome.dispose();
     _controleObs.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Cadastrar Roupa")),
-      body: SingleChildScrollView( // <--- ADICIONE ISSO AQUI
+      appBar: AppBar(
+        title: Text(widget.roupaParaEditar == null ? "Cadastrar Roupa" : "Editar Roupa"),
+        backgroundColor: Colors.orange,
+      ),
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
+              // --- ÁREA DA FOTO ---
               GestureDetector(
                 onTap: _tirarFoto,
                 child: Container(
                   width: double.infinity,
-                  height: 400, // Altura maior para combinar com fotos em pé
+                  height: 300,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300], // Só aparece se não tiver foto
+                    color: Colors.grey[300],
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: _imagemSelecionada != null
@@ -79,8 +95,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                     borderRadius: BorderRadius.circular(15),
                     child: Image.file(
                       File(_imagemSelecionada!.path),
-                      fit: BoxFit.cover, // <--- MUDE PARA COVER
-                      alignment: Alignment.center, // Centraliza a foto
+                      fit: BoxFit.cover,
                     ),
                   )
                       : const Icon(Icons.camera_alt, size: 50),
@@ -88,32 +103,69 @@ class _TelaCadastroState extends State<TelaCadastro> {
               ),
               const SizedBox(height: 20),
 
+              // --- CAMPOS DE TEXTO ---
               TextField(
                 controller: _controleNome,
-                decoration: InputDecoration(labelText: "Nome da peça"),
+                decoration: const InputDecoration(labelText: "Nome da peça"),
               ),
               TextField(
                 controller: _controleObs,
-                decoration: InputDecoration(labelText: "Observações"),
+                decoration: const InputDecoration(labelText: "Observações"),
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  final novaRoupa = Roupa(
-                    nome: _controleNome.text,
-                    obs: _controleObs.text,
-                    imagemPath: _imagemSelecionada
-                        ?.path, // <--- Aqui passamos a foto!
+              const SizedBox(height: 20),
+
+              // --- SELEÇÃO DE TAGS ---
+              const Text("Selecione as Tags:", style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _tagsDisponiveis.isEmpty
+                  ? const Text("Nenhuma tag criada. Vá em Filtros > Engrenagem.")
+                  : Wrap(
+                spacing: 8,
+                children: _tagsDisponiveis.map((tag) {
+                  final bool estaSelecionada = _tagsSelecionadasIds.contains(tag.id);
+                  return FilterChip(
+                    label: Text(tag.nome),
+                    selected: estaSelecionada,
+                    onSelected: (bool selecionado) {
+                      setState(() {
+                        if (selecionado) {
+                          _tagsSelecionadasIds.add(tag.id);
+                        } else {
+                          _tagsSelecionadasIds.remove(tag.id);
+                        }
+                      });
+                    },
                   );
-                  Navigator.pop(context, novaRoupa);
-                },
-                child: Text("Salvar"),
-                )
-              ],
-            ),
+                }).toList(),
+              ),
+
+              const SizedBox(height: 30),
+
+              // --- BOTÃO SALVAR ---
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  onPressed: () {
+                    if (_controleNome.text.isEmpty) return;
+
+                    final roupaFinal = Roupa(
+                      id: widget.roupaParaEditar?.id, // Mantém o ID se for edição!
+                      nome: _controleNome.text,
+                      obs: _controleObs.text,
+                      tagIds: _tagsSelecionadasIds, // Salva os IDs das tags marcadas
+                      imagemPath: _imagemSelecionada?.path,
+                    );
+
+                    Navigator.pop(context, roupaFinal);
+                  },
+                  child: const Text("Salvar", style: TextStyle(color: Colors.white)),
+                ),
+              )
+            ],
           ),
         ),
-      );
-    }
-
+      ),
+    );
   }
+}
