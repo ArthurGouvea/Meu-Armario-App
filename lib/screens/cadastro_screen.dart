@@ -51,6 +51,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   Future<void> _tirarFoto() async {
     final XFile? foto = await _picker.pickImage(
       source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.rear,
       imageQuality: 85,
     );
     if (foto != null) {
